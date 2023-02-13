@@ -1,5 +1,5 @@
+import PQueue from '@esm2cjs/p-queue';
 import * as m3u8 from "m3u8-parser";
-import PQueue from "p-queue";
 import * as path from "path";
 import { download, get, HttpHeaders } from "./http";
 import { ILogger } from "./Logger";

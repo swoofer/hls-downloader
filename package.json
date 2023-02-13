@@ -24,7 +24,7 @@
         "commander": "^9.5.0",
         "fs-extra": "^11.1.0",
         "m3u8-parser": "^6.0.0",
-        "p-queue": "^6.6.2"
+        "@esm2cjs/p-queue": "^7.3.0"
     },
     "devDependencies": {
         "@rollup/plugin-eslint": "^9.0.2",
