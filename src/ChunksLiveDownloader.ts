@@ -4,7 +4,7 @@ import { HttpHeaders } from "./http";
 import { ILogger } from "./Logger";
 
 export class ChunksLiveDownloader extends ChunksDownloader {
-    private liveStartTime: number = new Date().getTime();
+    private readonly liveStartTime: number;
     private lastSegment?: string;
 
     private timeoutHandle?: NodeJS.Timeout;
@@ -23,6 +23,7 @@ export class ChunksLiveDownloader extends ChunksDownloader {
         httpHeaders?: HttpHeaders,
     ) {
         super(logger, playlistUrl, concurrency, maxRetries, segmentDirectory, httpHeaders);
+        this.liveStartTime = new Date().getTime();
     }
 
     protected async refreshPlayList(): Promise<void> {
@@ -31,7 +32,7 @@ export class ChunksLiveDownloader extends ChunksDownloader {
         const interval = playlist.targetDuration || this.playlistRefreshInterval;
         const segments = playlist.segments!.map((s) => new URL(s.uri, this.playlistUrl).href);
 
-        this.refreshHandle = setTimeout(() => this.refreshPlayList(), interval * 1000) as NodeJS.Timeout;
+        this.refreshHandle = setTimeout(() => this.refreshPlayList(), interval * 1000);
 
         let toLoad: string[] = [];
         if (!this.lastSegment) {
@@ -52,7 +53,7 @@ export class ChunksLiveDownloader extends ChunksDownloader {
         this.lastSegment = toLoad[toLoad.length - 1];
         for (const uri of toLoad) {
             this.logger.log("Queued:", uri);
-            await this.queue.add(() => this.downloadSegment(uri));
+            this.queue.add(() => this.downloadSegment(uri));
         }
 
         // Timeout after X seconds without new segment
@@ -61,7 +62,7 @@ export class ChunksLiveDownloader extends ChunksDownloader {
         }
         this.timeoutHandle = setTimeout(() => this.timeout(), this.timeoutDuration * 1000) as NodeJS.Timeout;
 
-        if(this.liveEndTime > 0 && this.liveEndTime < new Date().getTime() - this.liveStartTime) {
+        if(this.liveEndTime && this.liveEndTime < new Date().getTime() - this.liveStartTime) {
             this.stopLiveStream();
             return;
         }
