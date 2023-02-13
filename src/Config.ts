@@ -6,6 +6,7 @@ export interface IConfig {
     ffmpegPath?: string;
     concurrency?: number;
     live?: boolean;
+    liveEndTime?: number;
     fromEnd?: number;
     maxRetries?: number;
     quality?: "worst" | "best" | number;

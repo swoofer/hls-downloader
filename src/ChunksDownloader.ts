@@ -10,7 +10,7 @@ export abstract class ChunksDownloader {
     protected resolve?: () => void;
     protected reject?: () => void;
 
-    constructor(
+    protected constructor(
         protected logger: ILogger,
         protected playlistUrl: string,
         protected concurrency: number,
@@ -65,7 +65,7 @@ export abstract class ChunksDownloader {
             await download(url, file, this.httpHeaders);
         } catch (err) {
             this.logger.log("Error:", err);
-            this.downloadWithRetries(url, file, maxRetries, ++currentTry);
+            await this.downloadWithRetries(url, file, maxRetries, ++currentTry);
         }
     }
 }

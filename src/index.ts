@@ -40,6 +40,7 @@ export async function download(config: IConfig): Promise<void> {
             logger,
             playlistUrl,
             config.concurrency || 1,
+            config.liveEndTime || 0,
             config.maxRetries || 1,
             config.fromEnd || 9999,
             segmentsDir,
@@ -72,6 +73,6 @@ export async function download(config: IConfig): Promise<void> {
     await transmuxTsToMp4(logger, ffmpegPath, mergedSegmentsFile, config.outputFile);
 
     // Delete temporary files
-    fs.remove(segmentsDir);
-    fs.remove(mergedSegmentsFile);
+    await fs.remove(segmentsDir);
+    await fs.remove(mergedSegmentsFile);
 }

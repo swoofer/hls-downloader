@@ -4,6 +4,7 @@ import { HttpHeaders } from "./http";
 import { ILogger } from "./Logger";
 
 export class ChunksLiveDownloader extends ChunksDownloader {
+    private liveStartTime: number = new Date().getTime();
     private lastSegment?: string;
 
     private timeoutHandle?: NodeJS.Timeout;
@@ -13,6 +14,7 @@ export class ChunksLiveDownloader extends ChunksDownloader {
         logger: ILogger,
         playlistUrl: string,
         concurrency: number,
+        private liveEndTime: number = 0,
         maxRetries: number,
         private fromEnd: number,
         segmentDirectory: string,
@@ -29,7 +31,7 @@ export class ChunksLiveDownloader extends ChunksDownloader {
         const interval = playlist.targetDuration || this.playlistRefreshInterval;
         const segments = playlist.segments!.map((s) => new URL(s.uri, this.playlistUrl).href);
 
-        this.refreshHandle = setTimeout(() => this.refreshPlayList(), interval * 1000);
+        this.refreshHandle = setTimeout(() => this.refreshPlayList(), interval * 1000) as NodeJS.Timeout;
 
         let toLoad: string[] = [];
         if (!this.lastSegment) {
@@ -50,14 +52,28 @@ export class ChunksLiveDownloader extends ChunksDownloader {
         this.lastSegment = toLoad[toLoad.length - 1];
         for (const uri of toLoad) {
             this.logger.log("Queued:", uri);
-            this.queue.add(() => this.downloadSegment(uri));
+            await this.queue.add(() => this.downloadSegment(uri));
         }
 
         // Timeout after X seconds without new segment
         if (this.timeoutHandle) {
             clearTimeout(this.timeoutHandle);
         }
-        this.timeoutHandle = setTimeout(() => this.timeout(), this.timeoutDuration * 1000);
+        this.timeoutHandle = setTimeout(() => this.timeout(), this.timeoutDuration * 1000) as NodeJS.Timeout;
+
+        if(this.liveEndTime > 0 && this.liveEndTime < new Date().getTime() - this.liveStartTime) {
+            this.stopLiveStream();
+            return;
+        }
+    }
+
+    private stopLiveStream(): void {
+        this.logger.log("Live stream has ended, stopping");
+        if (this.refreshHandle) {
+            clearTimeout(this.refreshHandle);
+        }
+        this.resolve!();
+        return;
     }
 
     private timeout(): void {
